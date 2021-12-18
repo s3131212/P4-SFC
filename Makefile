@@ -5,6 +5,7 @@ DEFAULT_PROG = basic.p4
 BUILD_DIR = build
 PCAP_DIR = pcaps
 LOG_DIR = logs
+TOPO_DIR = topo
 
 P4C = p4c-bm2-ss
 P4C_ARGS += --p4runtime-files $(BUILD_DIR)/$(basename $@).p4.p4info.txt
@@ -33,10 +34,12 @@ ifdef BMV2_SWITCH_EXE
 run_args += -b $(BMV2_SWITCH_EXE)
 endif
 
-all: run
 
 run: build
 	sudo python3 $(RUN_SCRIPT) -t $(TOPO) $(run_args)
+
+firewall: build
+	sudo python3 $(RUN_SCRIPT) -t $(TOPO_DIR)/firewall-topology.json $(run_args)
 
 stop:
 	sudo mn -c
