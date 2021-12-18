@@ -1,0 +1,9 @@
+# build file
+logs/
+build/
+pcaps/
+
+# bin
+utils/__pycache__/
+utils/p4runtime_lib/__pycache__/
+exercises/
