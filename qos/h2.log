@@ -1,0 +1,783 @@
+sniffing on eth0
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:02
+  src       = 08:00:00:00:02:00
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb9
+     len       = 36
+     id        = 1
+     flags     = 
+     frag      = 0
+     ttl       = 62
+     proto     = udp
+     chksum    = 0x650d
+     src       = 10.0.1.1
+     dst       = 10.0.2.2
+     \options   \
+###[ UDP ]### 
+        sport     = 1234
+        dport     = 4321
+        len       = 16
+        chksum    = 0x4365
+###[ Raw ]### 
+           load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:00
+  src       = 08:00:00:00:02:02
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xd8
+     len       = 64
+     id        = 39895
+     flags     = 
+     frag      = 0
+     ttl       = 64
+     proto     = icmp
+     chksum    = 0xc70b
+     src       = 10.0.2.2
+     dst       = 10.0.1.1
+     \options   \
+###[ ICMP ]### 
+        type      = dest-unreach
+        code      = port-unreachable
+        chksum    = 0x1421
+        reserved  = 0
+        length    = 0
+        nexthopmtu= 0
+        unused    = ''
+###[ IP in ICMP ]### 
+           version   = 4
+           ihl       = 5
+           tos       = 0xb9
+           len       = 36
+           id        = 1
+           flags     = 
+           frag      = 0
+           ttl       = 62
+           proto     = udp
+           chksum    = 0x650d
+           src       = 10.0.1.1
+           dst       = 10.0.2.2
+           \options   \
+###[ UDP in ICMP ]### 
+              sport     = 1234
+              dport     = 4321
+              len       = 16
+              chksum    = 0x4365
+###[ Raw ]### 
+                 load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:02
+  src       = 08:00:00:00:02:00
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb9
+     len       = 36
+     id        = 1
+     flags     = 
+     frag      = 0
+     ttl       = 62
+     proto     = udp
+     chksum    = 0x650d
+     src       = 10.0.1.1
+     dst       = 10.0.2.2
+     \options   \
+###[ UDP ]### 
+        sport     = 1234
+        dport     = 4321
+        len       = 16
+        chksum    = 0x4365
+###[ Raw ]### 
+           load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:00
+  src       = 08:00:00:00:02:02
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xd8
+     len       = 64
+     id        = 39913
+     flags     = 
+     frag      = 0
+     ttl       = 64
+     proto     = icmp
+     chksum    = 0xc6f9
+     src       = 10.0.2.2
+     dst       = 10.0.1.1
+     \options   \
+###[ ICMP ]### 
+        type      = dest-unreach
+        code      = port-unreachable
+        chksum    = 0x1421
+        reserved  = 0
+        length    = 0
+        nexthopmtu= 0
+        unused    = ''
+###[ IP in ICMP ]### 
+           version   = 4
+           ihl       = 5
+           tos       = 0xb9
+           len       = 36
+           id        = 1
+           flags     = 
+           frag      = 0
+           ttl       = 62
+           proto     = udp
+           chksum    = 0x650d
+           src       = 10.0.1.1
+           dst       = 10.0.2.2
+           \options   \
+###[ UDP in ICMP ]### 
+              sport     = 1234
+              dport     = 4321
+              len       = 16
+              chksum    = 0x4365
+###[ Raw ]### 
+                 load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:02
+  src       = 08:00:00:00:02:00
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb9
+     len       = 36
+     id        = 1
+     flags     = 
+     frag      = 0
+     ttl       = 62
+     proto     = udp
+     chksum    = 0x650d
+     src       = 10.0.1.1
+     dst       = 10.0.2.2
+     \options   \
+###[ UDP ]### 
+        sport     = 1234
+        dport     = 4321
+        len       = 16
+        chksum    = 0x4365
+###[ Raw ]### 
+           load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:00
+  src       = 08:00:00:00:02:02
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xd8
+     len       = 64
+     id        = 39960
+     flags     = 
+     frag      = 0
+     ttl       = 64
+     proto     = icmp
+     chksum    = 0xc6ca
+     src       = 10.0.2.2
+     dst       = 10.0.1.1
+     \options   \
+###[ ICMP ]### 
+        type      = dest-unreach
+        code      = port-unreachable
+        chksum    = 0x1421
+        reserved  = 0
+        length    = 0
+        nexthopmtu= 0
+        unused    = ''
+###[ IP in ICMP ]### 
+           version   = 4
+           ihl       = 5
+           tos       = 0xb9
+           len       = 36
+           id        = 1
+           flags     = 
+           frag      = 0
+           ttl       = 62
+           proto     = udp
+           chksum    = 0x650d
+           src       = 10.0.1.1
+           dst       = 10.0.2.2
+           \options   \
+###[ UDP in ICMP ]### 
+              sport     = 1234
+              dport     = 4321
+              len       = 16
+              chksum    = 0x4365
+###[ Raw ]### 
+                 load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:02
+  src       = 08:00:00:00:02:00
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb9
+     len       = 36
+     id        = 1
+     flags     = 
+     frag      = 0
+     ttl       = 62
+     proto     = udp
+     chksum    = 0x650d
+     src       = 10.0.1.1
+     dst       = 10.0.2.2
+     \options   \
+###[ UDP ]### 
+        sport     = 1234
+        dport     = 4321
+        len       = 16
+        chksum    = 0x4365
+###[ Raw ]### 
+           load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:00
+  src       = 08:00:00:00:02:02
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xd8
+     len       = 64
+     id        = 40088
+     flags     = 
+     frag      = 0
+     ttl       = 64
+     proto     = icmp
+     chksum    = 0xc64a
+     src       = 10.0.2.2
+     dst       = 10.0.1.1
+     \options   \
+###[ ICMP ]### 
+        type      = dest-unreach
+        code      = port-unreachable
+        chksum    = 0x1421
+        reserved  = 0
+        length    = 0
+        nexthopmtu= 0
+        unused    = ''
+###[ IP in ICMP ]### 
+           version   = 4
+           ihl       = 5
+           tos       = 0xb9
+           len       = 36
+           id        = 1
+           flags     = 
+           frag      = 0
+           ttl       = 62
+           proto     = udp
+           chksum    = 0x650d
+           src       = 10.0.1.1
+           dst       = 10.0.2.2
+           \options   \
+###[ UDP in ICMP ]### 
+              sport     = 1234
+              dport     = 4321
+              len       = 16
+              chksum    = 0x4365
+###[ Raw ]### 
+                 load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:02
+  src       = 08:00:00:00:02:00
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb9
+     len       = 36
+     id        = 1
+     flags     = 
+     frag      = 0
+     ttl       = 62
+     proto     = udp
+     chksum    = 0x650d
+     src       = 10.0.1.1
+     dst       = 10.0.2.2
+     \options   \
+###[ UDP ]### 
+        sport     = 1234
+        dport     = 4321
+        len       = 16
+        chksum    = 0x4365
+###[ Raw ]### 
+           load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:00
+  src       = 08:00:00:00:02:02
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xd8
+     len       = 64
+     id        = 40130
+     flags     = 
+     frag      = 0
+     ttl       = 64
+     proto     = icmp
+     chksum    = 0xc620
+     src       = 10.0.2.2
+     dst       = 10.0.1.1
+     \options   \
+###[ ICMP ]### 
+        type      = dest-unreach
+        code      = port-unreachable
+        chksum    = 0x1421
+        reserved  = 0
+        length    = 0
+        nexthopmtu= 0
+        unused    = ''
+###[ IP in ICMP ]### 
+           version   = 4
+           ihl       = 5
+           tos       = 0xb9
+           len       = 36
+           id        = 1
+           flags     = 
+           frag      = 0
+           ttl       = 62
+           proto     = udp
+           chksum    = 0x650d
+           src       = 10.0.1.1
+           dst       = 10.0.2.2
+           \options   \
+###[ UDP in ICMP ]### 
+              sport     = 1234
+              dport     = 4321
+              len       = 16
+              chksum    = 0x4365
+###[ Raw ]### 
+                 load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 33:33:00:00:00:fb
+  src       = 0a:4f:2d:f4:6b:04
+  type      = IPv6
+###[ IPv6 ]### 
+     version   = 6
+     tc        = 0
+     fl        = 883752
+     plen      = 53
+     nh        = UDP
+     hlim      = 255
+     src       = fe80::84f:2dff:fef4:6b04
+     dst       = ff02::fb
+###[ UDP ]### 
+        sport     = mdns
+        dport     = mdns
+        len       = 53
+        chksum    = 0x9f0c
+###[ DNS ]### 
+           id        = 0
+           qr        = 0
+           opcode    = QUERY
+           aa        = 0
+           tc        = 0
+           rd        = 0
+           ra        = 0
+           z         = 0
+           ad        = 0
+           cd        = 0
+           rcode     = ok
+           qdcount   = 2
+           ancount   = 0
+           nscount   = 0
+           arcount   = 0
+           \qd        \
+            |###[ DNS Question Record ]### 
+            |  qname     = '_ipps._tcp.local.'
+            |  qtype     = PTR
+            |  qclass    = IN
+            |###[ DNS Question Record ]### 
+            |  qname     = '_ipp._tcp.local.'
+            |  qtype     = PTR
+            |  qclass    = IN
+           an        = None
+           ns        = None
+           ar        = None
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 33:33:00:00:00:02
+  src       = 0a:4f:2d:f4:6b:04
+  type      = IPv6
+###[ IPv6 ]### 
+     version   = 6
+     tc        = 0
+     fl        = 0
+     plen      = 16
+     nh        = ICMPv6
+     hlim      = 255
+     src       = fe80::84f:2dff:fef4:6b04
+     dst       = ff02::2
+###[ ICMPv6 Neighbor Discovery - Router Solicitation ]### 
+        type      = Router Solicitation
+        code      = 0
+        cksum     = 0x389f
+        res       = 0
+###[ ICMPv6 Neighbor Discovery Option - Source Link-Layer Address ]### 
+           type      = 1
+           len       = 1
+           lladdr    = 0a:4f:2d:f4:6b:04
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:02
+  src       = 08:00:00:00:02:00
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb1
+     len       = 48
+     id        = 1
+     flags     = 
+     frag      = 0
+     ttl       = 62
+     proto     = tcp
+     chksum    = 0x6514
+     src       = 10.0.1.1
+     dst       = 10.0.2.2
+     \options   \
+###[ TCP ]### 
+        sport     = ftp_data
+        dport     = http
+        seq       = 0
+        ack       = 0
+        dataofs   = 5
+        reserved  = 0
+        flags     = S
+        window    = 8192
+        chksum    = 0xe8c0
+        urgptr    = 0
+        options   = []
+###[ Raw ]### 
+           load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:00
+  src       = 08:00:00:00:02:02
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb0
+     len       = 40
+     id        = 0
+     flags     = DF
+     frag      = 0
+     ttl       = 64
+     proto     = tcp
+     chksum    = 0x231e
+     src       = 10.0.2.2
+     dst       = 10.0.1.1
+     \options   \
+###[ TCP ]### 
+        sport     = http
+        dport     = ftp_data
+        seq       = 0
+        ack       = 9
+        dataofs   = 5
+        reserved  = 0
+        flags     = RA
+        window    = 0
+        chksum    = 0x9861
+        urgptr    = 0
+        options   = ''
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:02
+  src       = 08:00:00:00:02:00
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb1
+     len       = 48
+     id        = 1
+     flags     = 
+     frag      = 0
+     ttl       = 62
+     proto     = tcp
+     chksum    = 0x6514
+     src       = 10.0.1.1
+     dst       = 10.0.2.2
+     \options   \
+###[ TCP ]### 
+        sport     = ftp_data
+        dport     = http
+        seq       = 0
+        ack       = 0
+        dataofs   = 5
+        reserved  = 0
+        flags     = S
+        window    = 8192
+        chksum    = 0xe8c0
+        urgptr    = 0
+        options   = []
+###[ Raw ]### 
+           load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:00
+  src       = 08:00:00:00:02:02
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb0
+     len       = 40
+     id        = 0
+     flags     = DF
+     frag      = 0
+     ttl       = 64
+     proto     = tcp
+     chksum    = 0x231e
+     src       = 10.0.2.2
+     dst       = 10.0.1.1
+     \options   \
+###[ TCP ]### 
+        sport     = http
+        dport     = ftp_data
+        seq       = 0
+        ack       = 9
+        dataofs   = 5
+        reserved  = 0
+        flags     = RA
+        window    = 0
+        chksum    = 0x9861
+        urgptr    = 0
+        options   = ''
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:02
+  src       = 08:00:00:00:02:00
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb1
+     len       = 48
+     id        = 1
+     flags     = 
+     frag      = 0
+     ttl       = 62
+     proto     = tcp
+     chksum    = 0x6514
+     src       = 10.0.1.1
+     dst       = 10.0.2.2
+     \options   \
+###[ TCP ]### 
+        sport     = ftp_data
+        dport     = http
+        seq       = 0
+        ack       = 0
+        dataofs   = 5
+        reserved  = 0
+        flags     = S
+        window    = 8192
+        chksum    = 0xe8c0
+        urgptr    = 0
+        options   = []
+###[ Raw ]### 
+           load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:00
+  src       = 08:00:00:00:02:02
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb0
+     len       = 40
+     id        = 0
+     flags     = DF
+     frag      = 0
+     ttl       = 64
+     proto     = tcp
+     chksum    = 0x231e
+     src       = 10.0.2.2
+     dst       = 10.0.1.1
+     \options   \
+###[ TCP ]### 
+        sport     = http
+        dport     = ftp_data
+        seq       = 0
+        ack       = 9
+        dataofs   = 5
+        reserved  = 0
+        flags     = RA
+        window    = 0
+        chksum    = 0x9861
+        urgptr    = 0
+        options   = ''
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:02
+  src       = 08:00:00:00:02:00
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb1
+     len       = 48
+     id        = 1
+     flags     = 
+     frag      = 0
+     ttl       = 62
+     proto     = tcp
+     chksum    = 0x6514
+     src       = 10.0.1.1
+     dst       = 10.0.2.2
+     \options   \
+###[ TCP ]### 
+        sport     = ftp_data
+        dport     = http
+        seq       = 0
+        ack       = 0
+        dataofs   = 5
+        reserved  = 0
+        flags     = S
+        window    = 8192
+        chksum    = 0xe8c0
+        urgptr    = 0
+        options   = []
+###[ Raw ]### 
+           load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:00
+  src       = 08:00:00:00:02:02
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb0
+     len       = 40
+     id        = 0
+     flags     = DF
+     frag      = 0
+     ttl       = 64
+     proto     = tcp
+     chksum    = 0x231e
+     src       = 10.0.2.2
+     dst       = 10.0.1.1
+     \options   \
+###[ TCP ]### 
+        sport     = http
+        dport     = ftp_data
+        seq       = 0
+        ack       = 9
+        dataofs   = 5
+        reserved  = 0
+        flags     = RA
+        window    = 0
+        chksum    = 0x9861
+        urgptr    = 0
+        options   = ''
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:02
+  src       = 08:00:00:00:02:00
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb1
+     len       = 48
+     id        = 1
+     flags     = 
+     frag      = 0
+     ttl       = 62
+     proto     = tcp
+     chksum    = 0x6514
+     src       = 10.0.1.1
+     dst       = 10.0.2.2
+     \options   \
+###[ TCP ]### 
+        sport     = ftp_data
+        dport     = http
+        seq       = 0
+        ack       = 0
+        dataofs   = 5
+        reserved  = 0
+        flags     = S
+        window    = 8192
+        chksum    = 0xe8c0
+        urgptr    = 0
+        options   = []
+###[ Raw ]### 
+           load      = 'TestTest'
+
+got a packet
+###[ Ethernet ]### 
+  dst       = 08:00:00:00:02:00
+  src       = 08:00:00:00:02:02
+  type      = IPv4
+###[ IP ]### 
+     version   = 4
+     ihl       = 5
+     tos       = 0xb0
+     len       = 40
+     id        = 0
+     flags     = DF
+     frag      = 0
+     ttl       = 64
+     proto     = tcp
+     chksum    = 0x231e
+     src       = 10.0.2.2
+     dst       = 10.0.1.1
+     \options   \
+###[ TCP ]### 
+        sport     = http
+        dport     = ftp_data
+        seq       = 0
+        ack       = 9
+        dataofs   = 5
+        reserved  = 0
+        flags     = RA
+        window    = 0
+        chksum    = 0x9861
+        urgptr    = 0
+        options   = ''
+
