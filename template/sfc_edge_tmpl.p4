@@ -102,7 +102,7 @@ struct headers {
     sfc_service_t           sfc_service;
     sfc_context_t[MAX_HOPS] sfc_context;
     ipv4_t                  ipv4;
-    // tcp_t                   tcp;
+    tcp_t                   tcp;
 }
 
 
@@ -149,18 +149,16 @@ parser MyParser(packet_in packet,
 
     state parse_ipv4 {
         packet.extract(hdr.ipv4);
-        transition accept;
-        // transition select(hdr.ipv4.protocol){
-        //     TYPE_TCP: tcp;
-        //     default: accept;
-        // }
+        transition select(hdr.ipv4.protocol){
+            TYPE_TCP: tcp;
+            default: accept;
+        }
     }
 
-    // state tcp {
-    //    packet.extract(hdr.tcp);
-    //    transition accept;
-    // }
-
+    state tcp {
+       packet.extract(hdr.tcp);
+       transition accept;
+    }
 }
 
 /*************************************************************************
@@ -241,9 +239,6 @@ control MyIngress(inout headers hdr,
         standard_metadata.egress_spec = port;
         hdr.ethernet.etherType = TYPE_IPV4;
         hdr.ethernet.dstAddr = dstAddr;
-
-        hdr.sfc_header.setInvalid();
-        hdr.sfc_service.setInvalid();
     }
 
     table ipv4_lpm {
@@ -260,20 +255,7 @@ control MyIngress(inout headers hdr,
         default_action = NoAction();
     }
 
-    // table sfc_proxy_exact {
-    //     key = {
-    //         hdr.sfc_header.dst_id: exact;
-    //     }
-    //     actions = {
-    //         forward_sfc;
-    //         disable_sfc;
-    //         drop;
-    //     }
-    //     size = 1024;
-    //     default_action = drop();
-    // }
-
-    table sfc_proxy_forward_exact {
+    table sfc_forward_exact {
         key = {
             hdr.sfc_header.dst_id: exact;
         }
@@ -285,7 +267,7 @@ control MyIngress(inout headers hdr,
         default_action = NoAction();
     }
 
-    table sfc_proxy_disable {
+    table sfc_disable_exact {
         key = {
             hdr.sfc_header.dst_id: exact;
         }
@@ -297,19 +279,6 @@ control MyIngress(inout headers hdr,
         default_action = NoAction();
     }
     
-    // table sfc_service_exact {
-    //     key = {
-    //         hdr.sfc_header.type: exact;
-    //         hdr.sfc_service.type: exact;
-    //     }
-    //     actions = {
-    //         update_sfc_service;
-    //         drop;
-    //     }
-    //     size = 1024;
-    //     default_action = drop();
-    // }
-
     apply {
         if (hdr.ipv4.isValid() && !hdr.sfc_header.isValid()) {
             // Process only non-served IPv4 packets.
@@ -317,21 +286,15 @@ control MyIngress(inout headers hdr,
         }
 
         if (hdr.sfc_header.isValid()) {
-            // sfc_proxy_exact.apply();
             // Check if it should forward, or
             // Disable context and forward to host
+            if (sfc_forward_exact.apply().miss) {
+                if (sfc_disable_exact.apply().hit) {
+                    // Disable header and service
+                    hdr.sfc_header.setInvalid();
+                    hdr.sfc_service.setInvalid();
 
-            // Testing features (add another context)
-            add_sfc_context(1024);
-            add_sfc_context(1025);
-            add_sfc_context(1026);
-            add_sfc_context(1027);
-            // hdr.sfc_context.push_front(1);
-            // hdr.sfc_context[0].setValid();
-            // hdr.sfc_context[0].content = 1024;
-            
-            if (sfc_proxy_forward_exact.apply().miss) {
-                if (sfc_proxy_disable.apply().hit) {
+                    // Disable all context
                     bit<4> tmp = 0;
                     bit<4> size = (bit<4>)hdr.sfc_context.size;
                     
@@ -404,7 +367,7 @@ control MyDeparser(packet_out packet, in headers hdr) {
         packet.emit(hdr.sfc_service);
         packet.emit(hdr.sfc_context);
         packet.emit(hdr.ipv4);
-        // packet.emit(hdr.tcp);
+        packet.emit(hdr.tcp);
     }
 }
 

@@ -1,6 +1,6 @@
 BMV2_SWITCH_EXE = simple_switch_grpc
 
-DEFAULT_PROG = basic.p4
+# DEFAULT_PROG = basic.p4
 
 BUILD_DIR = build
 PCAP_DIR = pcaps
@@ -38,7 +38,7 @@ endif
 run: build
 	sudo python3 $(RUN_SCRIPT) -t $(TOPO) $(run_args)
 
-proxy: build
+sfc: build
 	sudo python3 $(RUN_SCRIPT) -t $(TOPO_DIR)/sfc-topology.json $(run_args)
 
 firewall: build

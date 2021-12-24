@@ -139,7 +139,7 @@ def write_proxy_enable_rule(p4info_helper, sw, dst_ip_addr, dst_id):
 def write_proxy_forward_rule(p4info_helper, sw, dst_id, port):
     # 2) Tunnel Transit Rule
     table_entry = p4info_helper.buildTableEntry(
-        table_name="MyIngress.sfc_proxy_forward_exact",
+        table_name="MyIngress.sfc_forward_exact",
         # table_name="MyIngress.sfc_proxy_exact",
         match_fields={
             "hdr.sfc_header.dst_id": dst_id
@@ -154,7 +154,7 @@ def write_proxy_forward_rule(p4info_helper, sw, dst_id, port):
 def write_proxy_disable_rule(p4info_helper, sw, dst_eth_addr, dst_id):
     # 3) Tunnel Egress Rule
     table_entry = p4info_helper.buildTableEntry(
-        table_name="MyIngress.sfc_proxy_disable",
+        table_name="MyIngress.sfc_disable_exact",
         # table_name="MyIngress.sfc_proxy_exact",
         match_fields={
             "hdr.sfc_header.dst_id": dst_id
@@ -232,10 +232,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='P4Runtime Controller')
     parser.add_argument('--p4info', help='p4info proto in text format from p4c',
                         type=str, action="store", required=False,
-                        default='./build/sfc_classifier.p4.p4info.txt')
+                        default='./build/sfc_proxy.p4.p4info.txt')
     parser.add_argument('--bmv2-json', help='BMv2 JSON file from p4c',
                         type=str, action="store", required=False,
-                        default='./build/sfc_classifier.json')
+                        default='./build/sfc_proxy.json')
     args = parser.parse_args()
 
     if not os.path.exists(args.p4info):

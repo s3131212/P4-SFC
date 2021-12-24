@@ -9,7 +9,7 @@ from time import sleep
 # Probably there's a better way of doing this.
 sys.path.append(
     os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                 '../../utils/'))
+                 '../utils/'))
 import p4runtime_lib.bmv2
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
 import p4runtime_lib.helper

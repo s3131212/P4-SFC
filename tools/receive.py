@@ -77,10 +77,10 @@ bind_layers(SFC_Context, IP, bos=1)
 # bind_layers(SourceRoute, SourceRoutingTail, bos=1)
 
 def main():
-    # iface = 'eth0'
+    iface = 'eth0'
     # iface = 's4-eth2'
     # iface = 's2-eth1'
-    iface = 's2-eth2'
+    # iface = 's2-eth2'
     print("sniffing on %s" % iface)
     sys.stdout.flush()
     sniff(iface = iface,

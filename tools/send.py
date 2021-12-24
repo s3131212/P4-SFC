@@ -7,7 +7,7 @@ import struct
 
 from scapy.all import sendp, send, get_if_list, get_if_hwaddr, bind_layers
 from scapy.all import Packet
-from scapy.all import Ether, IP, UDP
+from scapy.all import Ether, IP, UDP, TCP
 from scapy.fields import *
 import readline
 
