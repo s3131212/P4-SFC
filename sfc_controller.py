@@ -189,7 +189,7 @@ def install_proxy(p4info_file_path, bmv2_file_path):
         master_arbitration_update(s1, s2, s4)
 
         # Install the P4 program on the switches
-        set_pipeline(p4info_helper, bmv2_file_path, s1, s2, s4)
+        # set_pipeline(p4info_helper, bmv2_file_path, s1, s2, s4)
 
         # Install drop rule
         write_drop_rule(p4info_helper, s1)

@@ -1,4 +1,4 @@
-# Implementing a Control Plane using P4Runtime
+# Implementing a Simple SFC using p4
 
 This is a simple SFC implemented on P4.
 
