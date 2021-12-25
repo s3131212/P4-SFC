@@ -207,6 +207,7 @@ control MyIngress(inout headers hdr,
 
         hdr.sfc_service.setValid();
         hdr.sfc_service.status = STATUS_INIT;
+        hdr.sfc_service.svc_type = SVC_TYPE_PROXY;
         
         hdr.ethernet.etherType = TYPE_SFC;
     }
@@ -239,6 +240,10 @@ control MyIngress(inout headers hdr,
         standard_metadata.egress_spec = port;
         hdr.ethernet.etherType = TYPE_IPV4;
         hdr.ethernet.dstAddr = dstAddr;
+    }
+
+    action check_sfc_service() {
+        // Simply used in check, so no-ops
     }
 
     table ipv4_lpm {
@@ -281,15 +286,32 @@ control MyIngress(inout headers hdr,
         default_action = NoAction();
     }
 
+    table sfc_service_exact {
+        key = {
+            hdr.sfc_header.app_type: exact;
+            hdr.sfc_service.svc_type: exact;
+        }
+        actions = {
+            check_sfc_service;
+            drop;
+        }
+        size = 1024;
+        default_action = drop();
+    }
+
     apply {
         if (hdr.ipv4.isValid() && !hdr.sfc_header.isValid()) {
             // Process only non-served IPv4 packets.
             ipv4_lpm.apply();
         }
 
-        if (hdr.sfc_header.isValid()) {
+        if (hdr.sfc_header.isValid() && sfc_service_exact.apply().hit) {
             add_sfc_context(CONTEXT_PROXY);
             hdr.sfc_context[0].bos = 1;
+            // add_sfc_context(1001);
+            // add_sfc_context(1002);
+            // add_sfc_context(1003);
+            // add_sfc_context(1004);
 
             // For testing
             // to firewall

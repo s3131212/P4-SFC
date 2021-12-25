@@ -26,8 +26,8 @@ const bit<6> SVC_TYPE_FIRWALL = 1;
 const bit<6> SVC_TYPE_QOS = 2;
 const bit<6> SVC_TYPE_LOAD_BALANCE = 3;
 
-const bit<15> CONTEXT_FIREWALL = 1024;
 const bit<15> CONTEXT_PROXY= 1000;
+const bit<15> CONTEXT_FIREWALL = 1024;
 const bit<15> CONTEXT_QOS = 1336;
 
 /*************************************************************************
@@ -38,6 +38,7 @@ typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
 
+
 header ethernet_t {
     macAddr_t dstAddr;
     macAddr_t srcAddr;
@@ -47,13 +48,13 @@ header ethernet_t {
 header sfc_header_t {
     bit<2> version; 
     bit<4> max_size;
-    bit<4> type;
+    bit<4> app_type;
     bit<2> qos;
     bit<4> dst_id;
 }
 
 header sfc_service_t {
-    bit<6> type;
+    bit<6> svc_type;
     bit<2> status;
     bit<4> act;
     bit<4> params;
@@ -196,30 +197,26 @@ control MyIngress(inout headers hdr,
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
 
-    action enable_sfc(bit<4> max_size, bit<2> qos, bit<4> dst_id) {
+    action enable_sfc(bit<4> max_size, bit<2> qos, bit<4> dst_id, bit<4> app_type) {
         hdr.sfc_header.setValid();
         hdr.sfc_header.version = (bit<2>) 1;
         hdr.sfc_header.max_size = max_size;
-        hdr.sfc_header.type = TYPE_GENERAL;
+        hdr.sfc_header.app_type = app_type;
         hdr.sfc_header.qos = qos;
         hdr.sfc_header.dst_id = dst_id;
 
         hdr.sfc_service.setValid();
         hdr.sfc_service.status = STATUS_INIT;
-
-        hdr.sfc_context.push_front(1);
-        hdr.sfc_context[0].setValid();
-        hdr.sfc_context[0].bos = 1;
-        hdr.sfc_context[0].content = 1000;
+        hdr.sfc_service.svc_type = SVC_TYPE_PROXY;
         
         hdr.ethernet.etherType = TYPE_SFC;
     }
 
-    action update_sfc_service(bit<6> type, 
+    action update_sfc_service(bit<6> svc_type, 
                               bit<2> status,
                               bit<4> act,
                               bit<4> params) {
-        hdr.sfc_service.type = type;
+        hdr.sfc_service.svc_type = svc_type;
         hdr.sfc_service.status = status;
         hdr.sfc_service.act = act;
         hdr.sfc_service.params = params;
@@ -231,21 +228,22 @@ control MyIngress(inout headers hdr,
         hdr.sfc_context[0].content = content;
 
         // Set the last context to be 1
-        // In case of we have more than 4 contexts
-        // And the initial one is popped
-        if (hdr.sfc_context.size == 4) {
-            hdr.sfc_context[3].bos = 1;
-        }
+        hdr.sfc_context[hdr.sfc_context.size - 1].bos = 1;
     }
 
-    action forward_sfc(egressSpec_t port) {
+    action forward_sfc(egressSpec_t port, bit<6> svc_type) {
         standard_metadata.egress_spec = port;
+        update_sfc_service(svc_type, STATUS_RUNNING, 0, 0);
     }
 
     action disable_sfc(macAddr_t dstAddr, egressSpec_t port) {
         standard_metadata.egress_spec = port;
         hdr.ethernet.etherType = TYPE_IPV4;
         hdr.ethernet.dstAddr = dstAddr;
+    }
+
+    action check_sfc_service() {
+        // Simply used in check, so no-ops
     }
 
     table ipv4_lpm {
@@ -264,7 +262,9 @@ control MyIngress(inout headers hdr,
 
     table sfc_forward_exact {
         key = {
+            hdr.sfc_header.app_type: exact;
             hdr.sfc_header.dst_id: exact;
+            hdr.sfc_service.act: exact;
         }
         actions = {
             forward_sfc;
@@ -285,16 +285,30 @@ control MyIngress(inout headers hdr,
         size = 1024;
         default_action = NoAction();
     }
-    
+
+    table sfc_service_exact {
+        key = {
+            hdr.sfc_header.app_type: exact;
+            hdr.sfc_service.svc_type: exact;
+        }
+        actions = {
+            check_sfc_service;
+            drop;
+        }
+        size = 1024;
+        default_action = drop();
+    }
+
     apply {
         if (hdr.ipv4.isValid() && !hdr.sfc_header.isValid()) {
             // Process only non-served IPv4 packets.
             ipv4_lpm.apply();
         }
 
-        if (hdr.sfc_header.isValid()) {
-            // Check if it should forward, or
-            // Disable context and forward to host
+        if (hdr.sfc_header.isValid() && sfc_service_exact.apply().hit) {
+            add_sfc_context(CONTEXT_PROXY);
+            hdr.sfc_context[0].bos = 1;
+
             if (sfc_forward_exact.apply().miss) {
                 if (sfc_disable_exact.apply().hit) {
                     // Disable header and service

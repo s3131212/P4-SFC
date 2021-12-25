@@ -26,8 +26,8 @@ const bit<6> SVC_TYPE_FIRWALL = 1;
 const bit<6> SVC_TYPE_QOS = 2;
 const bit<6> SVC_TYPE_LOAD_BALANCE = 3;
 
-const bit<15> CONTEXT_FIREWALL = 1024;
 const bit<15> CONTEXT_PROXY= 1000;
+const bit<15> CONTEXT_FIREWALL = 1024;
 const bit<15> CONTEXT_QOS = 1336;
 
 /*************************************************************************
@@ -47,13 +47,13 @@ header ethernet_t {
 header sfc_header_t {
     bit<2> version; 
     bit<4> max_size;
-    bit<4> type;
+    bit<4> app_type;
     bit<2> qos;
     bit<4> dst_id;
 }
 
 header sfc_service_t {
-    bit<6> type;
+    bit<6> svc_type;
     bit<2> status;
     bit<4> act;
     bit<4> params;
@@ -200,11 +200,11 @@ control MyIngress(inout headers hdr,
         // Simply used in check, so no-ops
     }
 
-    action update_sfc_service(bit<6> type, 
+    action update_sfc_service(bit<6> svc_type, 
                               bit<2> status,
                               bit<4> act,
                               bit<4> params) {
-        hdr.sfc_service.type = type;
+        hdr.sfc_service.svc_type = svc_type;
         hdr.sfc_service.status = status;
         hdr.sfc_service.act = act;
         hdr.sfc_service.params = params;
@@ -216,34 +216,19 @@ control MyIngress(inout headers hdr,
         hdr.sfc_context[0].content = content;
 
         // Set the last context to be 1
-        // In case of we have more than 4 contexts
-        // And the initial one is popped
-        if (hdr.sfc_context.size == 4) {
-            hdr.sfc_context[3].bos = 1;
-        }
+        hdr.sfc_context[hdr.sfc_context.size - 1].bos = 1;
     }
 
-    action forward_sfc(egressSpec_t port) {
+    action forward_sfc(egressSpec_t port, bit<6> svc_type) {
         standard_metadata.egress_spec = port;
-    }
-
-    table ipv4_lpm {
-        key = {
-            hdr.ipv4.dstAddr: lpm;
-        }
-        actions = {
-            ipv4_forward;
-            enable_sfc;
-            drop;
-            NoAction;
-        }
-        size = 1024;
-        default_action = NoAction();
+        update_sfc_service(svc_type, STATUS_RUNNING, 0, 0);
     }
 
     table sfc_forward_exact {
         key = {
+            hdr.sfc_header.app_type: exact;
             hdr.sfc_header.dst_id: exact;
+            hdr.sfc_service.act: exact;
         }
         actions = {
             forward_sfc;
@@ -255,8 +240,8 @@ control MyIngress(inout headers hdr,
     
     table sfc_service_exact {
         key = {
-            hdr.sfc_header.type: exact;
-            hdr.sfc_service.type: exact;
+            hdr.sfc_header.app_type: exact;
+            hdr.sfc_service.svc_type: exact;
         }
         actions = {
             check_sfc_service;
@@ -272,7 +257,7 @@ control MyIngress(inout headers hdr,
             // Then check if service match
             if (sfc_service_exact.apply().hit) {
                 // Finally check how to forward
-                if (sfc_proxy_forward_exact.apply().hit) {
+                if (sfc_forward_exact.apply().hit) {
                     // If need to forward, maybe add some additional context
                     add_sfc_context(1024);
                 }

@@ -3,6 +3,8 @@
 #include <v1model.p4>
 
 #define MAX_HOPS 4
+#define BLOOM_FILTER_ENTRIES 4096
+#define BLOOM_FILTER_BIT_WIDTH 3
 
 const bit<16> TYPE_SFC = 0x1234;
 const bit<16> TYPE_IPV4 = 0x800;
@@ -185,6 +187,12 @@ control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
 
+    register<bit<BLOOM_FILTER_BIT_WIDTH>>(BLOOM_FILTER_ENTRIES) bloom_filter_1;
+    register<bit<BLOOM_FILTER_BIT_WIDTH>>(BLOOM_FILTER_ENTRIES) bloom_filter_2;
+    bit<32> reg_pos_one; bit<32> reg_pos_two;
+    bit<3> reg_val_one; bit<3> reg_val_two;
+    bit<1> direction;
+
     action drop() {
         mark_to_drop(standard_metadata);
     }
@@ -194,6 +202,23 @@ control MyIngress(inout headers hdr,
         hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
         hdr.ethernet.dstAddr = dstAddr;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+    }
+
+    action compute_hashes(ip4Addr_t ipAddr1, ip4Addr_t ipAddr2, bit<16> port1, bit<16> port2){
+       //Get register position
+       hash(reg_pos_one, HashAlgorithm.crc16, (bit<32>)0, {ipAddr1,
+                                                           ipAddr2,
+                                                           port1,
+                                                           port2,
+                                                           hdr.ipv4.protocol},
+                                                           (bit<32>)BLOOM_FILTER_ENTRIES);
+
+       hash(reg_pos_two, HashAlgorithm.crc32, (bit<32>)0, {ipAddr1,
+                                                           ipAddr2,
+                                                           port1,
+                                                           port2,
+                                                           hdr.ipv4.protocol},
+                                                           (bit<32>)BLOOM_FILTER_ENTRIES);
     }
 
     action check_sfc_service() {
@@ -251,6 +276,23 @@ control MyIngress(inout headers hdr,
         default_action = drop();
     }
 
+    action set_direction(bit<1> dir) {
+        direction = dir;
+    }
+
+    table check_ports {
+        key = {
+            standard_metadata.ingress_port: exact;
+            standard_metadata.egress_spec: exact;
+        }
+        actions = {
+            set_direction;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction();
+    }
+
     apply {
         // Assume all packets are sfc-enabled
         if (hdr.sfc_header.isValid()) {
@@ -259,7 +301,67 @@ control MyIngress(inout headers hdr,
                 // Finally check how to forward
                 if (sfc_forward_exact.apply().hit) {
                     // If need to forward, maybe add some additional context
-                    add_sfc_context(1024);
+                    add_sfc_context(CONTEXT_FIREWALL);
+
+                    if (hdr.tcp.isValid()) {
+                        direction = 0; // default
+                        if (check_ports.apply().hit) {
+                            // test and set the bloom filter
+                            if (direction == 0) {
+                                compute_hashes(hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort);
+                            }
+                            else {
+                                compute_hashes(hdr.ipv4.dstAddr, hdr.ipv4.srcAddr, hdr.tcp.dstPort, hdr.tcp.srcPort);
+                            }
+                            // Packet comes from internal network
+                            if (direction == 0){
+                                // If there is a syn we update the bloom filter and add the entry
+                                if (hdr.tcp.syn == 1){
+                                    log_msg("Add an entry to the firewall, hdr.ipv4.srcAddr={}, hdr.ipv4.dstAddr={}, hdr.tcp.srcPort={}, hdr.tcp.dstPort={}", {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort});
+                                    bloom_filter_1.write(reg_pos_one, 1);
+                                    bloom_filter_2.write(reg_pos_two, 1);
+                                }
+                            }
+                            // Packet comes from outside
+                            else if (direction == 1){
+                                // Read bloom filter cells to check if there are 1's
+                                bloom_filter_1.read(reg_val_one, reg_pos_one);
+                                bloom_filter_2.read(reg_val_two, reg_pos_two);
+
+                                // only allow flow to pass if both entries are set
+                                if (reg_val_one == 0 || reg_val_two == 0){
+                                    drop();
+                                }
+                            }
+
+                            // The FIN packet
+                            if (hdr.tcp.fin == 1){
+                                bloom_filter_1.read(reg_val_one, reg_pos_one);
+                                bloom_filter_2.read(reg_val_two, reg_pos_two);
+                                
+                                if (direction == 0) {
+                                    // set the bloom filter to FIN WAIT state.
+                                    bloom_filter_1.write(reg_pos_one, reg_val_one | (bit<3>)2);
+                                    bloom_filter_2.write(reg_pos_two, reg_val_two | (bit<3>)2);
+                                } else {
+                                    // set the bloom filter to FIN WAIT state.
+                                    bloom_filter_1.write(reg_pos_one, reg_val_one | (bit<3>)4);
+                                    bloom_filter_2.write(reg_pos_two, reg_val_two | (bit<3>)4);
+                                }
+
+                                bloom_filter_1.read(reg_val_one, reg_pos_one);
+                                bloom_filter_2.read(reg_val_two, reg_pos_two);
+                                log_msg("after modify, pos1 = {}, pos2 = {}", {reg_val_one, reg_val_two});
+                                
+                                if (reg_val_one == 7 && reg_val_two == 7) {
+                                    // delete the entry.
+                                    log_msg("Remove an entry from the firewall, hdr.ipv4.srcAddr={}, hdr.ipv4.dstAddr={}, hdr.tcp.srcPort={}, hdr.tcp.dstPort={}", {hdr.ipv4.srcAddr, hdr.ipv4.dstAddr, hdr.tcp.srcPort, hdr.tcp.dstPort});
+                                    bloom_filter_1.write(reg_pos_one, 0);
+                                    bloom_filter_2.write(reg_pos_two, 0);
+                                }
+                            }
+                        }
+                    }
                 }
             } 
         }
