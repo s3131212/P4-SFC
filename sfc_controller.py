@@ -14,14 +14,30 @@ import p4runtime_lib.bmv2
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
 import p4runtime_lib.helper
 
-SWITCH_TO_HOST_PORT = 1
-SWITCH_TO_SWITCH_PORT = 2
 
 PROXY_DST_ID_1 = 11
 PROXY_DST_ID_2 = 12
 
 MID_PROXY_PORT_1 = 1
 MID_PROXY_PORT_2 = 2
+MID_PROXY_PORT_3 = 3
+MID_PROXY_PORT_4 = 4
+
+APP_TYPE_GENERAL = 0
+APP_TYPE_WEB = 1
+
+SVC_TYPE_PROXY = 0
+SVC_TYPE_FIREWALL = 1
+SVC_TYPE_QOS = 2
+SVC_TYPE_LOAD_BALANCE = 3
+
+SVC_ACT_DEFAULT = 0
+SVC_ACT_FIREWALL = 1
+
+QOS_TOP = 0
+QOS_HIGH = 1
+QOS_MEDIUM = 2
+QOS_LOW = 3
 
 def readTableRules(p4info_helper, sw):
     """
@@ -96,31 +112,7 @@ def write_drop_rule(p4info_helper, sw):
     sw.WriteTableEntry(table_entry)
     print("Installed drop rule on %s" % sw.name)
 
-def write_forward_rule(p4info_helper, sw, dst_ip_addr, dst_eth_addr, port):
-    """
-    Install forwarding rules
-
-    :param p4info_helper: the P4Info helper
-    :param sw: the target switch
-    :param dst_ip_addr: the destination IP to match in the forward rule
-    :param dst_eth_addr: the destination ETH address to send to in the forward rule
-    :param port: the switch port to send to in the forward rule
-    """
-    
-    table_entry = p4info_helper.buildTableEntry(
-        table_name="MyIngress.ipv4_lpm",
-        match_fields={
-            "hdr.ipv4.dstAddr": (dst_ip_addr, 32)
-        },
-        action_name="MyIngress.ipv4_forward",
-        action_params={
-            "dstAddr": dst_eth_addr,
-            "port": port
-        })
-    sw.WriteTableEntry(table_entry)
-    print("Installed forward rule on %s" % sw.name)
-
-def write_proxy_enable_rule(p4info_helper, sw, dst_ip_addr, dst_id):
+def write_sfc_enable_rule(p4info_helper, sw, dst_ip_addr, qos, dst_id, app_type):
     # 1) Tunnel Ingress Rule
     table_entry = p4info_helper.buildTableEntry(
         table_name="MyIngress.ipv4_lpm",
@@ -130,28 +122,33 @@ def write_proxy_enable_rule(p4info_helper, sw, dst_ip_addr, dst_id):
         action_name="MyIngress.enable_sfc",
         action_params={
             "max_size": 4,
-            "qos": 1,
-            "dst_id": dst_id
+            "qos": qos,
+            "dst_id": dst_id,
+            "app_type": app_type
         })
     sw.WriteTableEntry(table_entry)
     print("Installed sfc-enabled rule on %s" % sw.name)
 
-def write_proxy_forward_rule(p4info_helper, sw, dst_id, port):
+def write_sfc_forward_rule(p4info_helper, sw, app_type, dst_id, act, port, svc_type):
     # 2) Tunnel Transit Rule
     table_entry = p4info_helper.buildTableEntry(
         table_name="MyIngress.sfc_forward_exact",
         # table_name="MyIngress.sfc_proxy_exact",
         match_fields={
-            "hdr.sfc_header.dst_id": dst_id
+            "hdr.sfc_header.app_type": app_type,
+            "hdr.sfc_header.dst_id": dst_id,
+            "hdr.sfc_service.act": act
         },
         action_name="MyIngress.forward_sfc",
         action_params={
-            "port": port
+            "port": port,
+            "svc_type": svc_type
         })
+
     sw.WriteTableEntry(table_entry)
     print("Installed proxy-transit rule on %s" % sw.name)
 
-def write_proxy_disable_rule(p4info_helper, sw, dst_eth_addr, dst_id):
+def write_sfc_disable_rule(p4info_helper, sw, dst_eth_addr, dst_id):
     # 3) Tunnel Egress Rule
     table_entry = p4info_helper.buildTableEntry(
         table_name="MyIngress.sfc_disable_exact",
@@ -162,66 +159,122 @@ def write_proxy_disable_rule(p4info_helper, sw, dst_eth_addr, dst_id):
         action_name="MyIngress.disable_sfc",
         action_params={
             "dstAddr": dst_eth_addr,
-            "port": SWITCH_TO_HOST_PORT
+            "port": 1
         })
     sw.WriteTableEntry(table_entry)
     print("Installed proxy-disabled rule on %s" % sw.name)
 
-def write_proxy_rules(p4info_helper, ingress_sw, egress_sw, dst_eth_addr, dst_ip_addr, dst_id, port):
-    write_proxy_enable_rule(p4info_helper, ingress_sw, dst_ip_addr, dst_id)
-    write_proxy_forward_rule(p4info_helper, ingress_sw, dst_id, port)
-    write_proxy_disable_rule(p4info_helper, egress_sw, dst_eth_addr, dst_id)
+def write_sfc_service_rule(p4info_helper, sw, app_type, svc_type):
+    # 2) Tunnel Transit Rule
+    table_entry = p4info_helper.buildTableEntry(
+        table_name="MyIngress.sfc_service_exact",
+        # table_name="MyIngress.sfc_proxy_exact",
+        match_fields={
+            "hdr.sfc_header.app_type": app_type,
+            "hdr.sfc_service.svc_type": svc_type
+        },
+        action_name="MyIngress.check_sfc_service",
+        action_params={}
+        )
+    sw.WriteTableEntry(table_entry)
+    print("Installed proxy-transit rule on %s" % sw.name)
 
 def install_proxy(p4info_file_path, bmv2_file_path):
-    # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
 
     try:
-        # Create a switch connection object for s1;
-        # this is backed by a P4Runtime gRPC connection.
-        # Also, dump all P4Runtime messages sent to switch to given txt files.
         s1 = connect_switch('s1', 0)
         s2 = connect_switch('s2', 1)
-        s4 = connect_switch('s4', 3)
 
         # Send master arbitration update message to establish this controller as
         # master (required by P4Runtime before performing any other write operation)
-        master_arbitration_update(s1, s2, s4)
+        master_arbitration_update(s1, s2)
 
         # Install the P4 program on the switches
-        # set_pipeline(p4info_helper, bmv2_file_path, s1, s2, s4)
-
-        # Install drop rule
-        write_drop_rule(p4info_helper, s1)
-        write_drop_rule(p4info_helper, s2)
-        write_drop_rule(p4info_helper, s4)
-       
-        # Install forward rules for s1
-        # write_forward_rule(p4info_helper, s1, "10.0.1.1", "08:00:00:00:01:11", 1)
-        # write_forward_rule(p4info_helper, s1, "10.0.2.2", "08:00:00:00:02:22", 2)
+        set_pipeline(p4info_helper, bmv2_file_path, s1, s2)
 
         # s1
-        write_proxy_rules(p4info_helper, s1, s2, "08:00:00:00:02:22", "10.0.2.2", PROXY_DST_ID_1, SWITCH_TO_SWITCH_PORT)
-        # write_proxy_enable_rule(p4info_helper, s1, "10.0.2.2", PROXY_DST_ID_1)
-        # write_proxy_forward_rule(p4info_helper, s1, PROXY_DST_ID_1, SWITCH_TO_SWITCH_PORT)
-
-        # s4
-        write_proxy_forward_rule(p4info_helper, s4, PROXY_DST_ID_1, MID_PROXY_PORT_2)
-        write_proxy_forward_rule(p4info_helper, s4, PROXY_DST_ID_2, MID_PROXY_PORT_1)
+        write_drop_rule(p4info_helper, s1)
+        write_sfc_enable_rule(p4info_helper, s1, "10.0.2.2", QOS_TOP, PROXY_DST_ID_2, APP_TYPE_GENERAL)
+        write_sfc_forward_rule(p4info_helper, s1, APP_TYPE_GENERAL, PROXY_DST_ID_2, SVC_ACT_FIREWALL, 3, SVC_TYPE_FIREWALL)
+        write_sfc_forward_rule(p4info_helper, s1, APP_TYPE_GENERAL, PROXY_DST_ID_2, SVC_ACT_DEFAULT, 2, SVC_TYPE_QOS)
+        write_sfc_disable_rule(p4info_helper, s1, "08:00:00:00:01:11", PROXY_DST_ID_1)
 
         # s2
-        write_proxy_rules(p4info_helper, s2, s1, "08:00:00:00:01:11", "10.0.1.1", PROXY_DST_ID_2, SWITCH_TO_SWITCH_PORT)
-        # write_proxy_forward_rule(p4info_helper, s2, PROXY_DST_ID_1, SWITCH_TO_HOST_PORT)
+        write_drop_rule(p4info_helper, s2)
+        write_sfc_enable_rule(p4info_helper, s2, "10.0.1.1", QOS_TOP, PROXY_DST_ID_1, APP_TYPE_GENERAL)
+        write_sfc_forward_rule(p4info_helper, s2, APP_TYPE_GENERAL, PROXY_DST_ID_1, SVC_ACT_DEFAULT, 2, SVC_TYPE_QOS)
+        write_sfc_forward_rule(p4info_helper, s2, APP_TYPE_GENERAL, PROXY_DST_ID_1, SVC_ACT_FIREWALL, 3, SVC_TYPE_QOS)
+        write_sfc_disable_rule(p4info_helper, s2, "08:00:00:00:02:22", PROXY_DST_ID_2)
 
 
         # Read table entries from s1
         readTableRules(p4info_helper, s1)
         readTableRules(p4info_helper, s2)
+        
+        # Close switch connections 
+        ShutdownAllSwitchConnections()
+
+    except KeyboardInterrupt:
+        print(" Shutting down.")
+    except grpc.RpcError as e:
+        printGrpcError(e)
+
+def install_firewall(p4info_file_path, bmv2_file_path):
+    p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
+
+    try:
+        s3 = connect_switch('s3', 2)
+
+        # Send master arbitration update message to establish this controller as
+        # master (required by P4Runtime before performing any other write operation)
+        master_arbitration_update(s3)
+
+        # Install the P4 program on the switches
+        set_pipeline(p4info_helper, bmv2_file_path, s3)
+
+        # s4
+        write_sfc_forward_rule(p4info_helper, s3, APP_TYPE_GENERAL, PROXY_DST_ID_1, SVC_ACT_DEFAULT, 1, SVC_TYPE_PROXY)
+        write_sfc_forward_rule(p4info_helper, s3, APP_TYPE_GENERAL, PROXY_DST_ID_2, SVC_ACT_DEFAULT, 2, SVC_TYPE_QOS)
+        write_sfc_service_rule(p4info_helper, s3, APP_TYPE_GENERAL, SVC_TYPE_FIREWALL)
+
+        # Read table entries from s1
+        readTableRules(p4info_helper, s3)
+        
+        # Close switch connections 
+        ShutdownAllSwitchConnections()
+
+    except KeyboardInterrupt:
+        print(" Shutting down.")
+    except grpc.RpcError as e:
+        printGrpcError(e)
+
+def install_qos(p4info_file_path, bmv2_file_path):
+    p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
+
+    try:
+        s4 = connect_switch('s4', 3)
+
+        # Send master arbitration update message to establish this controller as
+        # master (required by P4Runtime before performing any other write operation)
+        master_arbitration_update(s4)
+
+        # Install the P4 program on the switches
+        set_pipeline(p4info_helper, bmv2_file_path, s4)
+
+        # s4
+        write_sfc_forward_rule(p4info_helper, s4, APP_TYPE_GENERAL, PROXY_DST_ID_1, SVC_ACT_DEFAULT, 1, SVC_TYPE_PROXY)
+        write_sfc_forward_rule(p4info_helper, s4, APP_TYPE_GENERAL, PROXY_DST_ID_1, SVC_ACT_FIREWALL, 3, SVC_TYPE_FIREWALL)
+        write_sfc_forward_rule(p4info_helper, s4, APP_TYPE_GENERAL, PROXY_DST_ID_2, SVC_ACT_DEFAULT, 2, SVC_TYPE_PROXY)
+        write_sfc_forward_rule(p4info_helper, s4, APP_TYPE_GENERAL, PROXY_DST_ID_2, SVC_ACT_FIREWALL, 4, SVC_TYPE_PROXY)
+
+        write_sfc_service_rule(p4info_helper, s4, APP_TYPE_GENERAL, SVC_TYPE_QOS)
+
+        # Read table entries from s1
         readTableRules(p4info_helper, s4)
         
         # Close switch connections 
         ShutdownAllSwitchConnections()
-        # connection_close(s1, s2)
 
     except KeyboardInterrupt:
         print(" Shutting down.")
@@ -229,24 +282,26 @@ def install_proxy(p4info_file_path, bmv2_file_path):
         printGrpcError(e)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='P4Runtime Controller')
-    parser.add_argument('--p4info', help='p4info proto in text format from p4c',
-                        type=str, action="store", required=False,
-                        default='./build/sfc_proxy.p4.p4info.txt')
-    parser.add_argument('--bmv2-json', help='BMv2 JSON file from p4c',
-                        type=str, action="store", required=False,
-                        default='./build/sfc_proxy.json')
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser(description='P4Runtime Controller')
+    # parser.add_argument('--p4info', help='p4info proto in text format from p4c',
+    #                     type=str, action="store", required=False,
+    #                     default='./build/sfc_proxy.p4.p4info.txt')
+    # parser.add_argument('--bmv2-json', help='BMv2 JSON file from p4c',
+    #                     type=str, action="store", required=False,
+    #                     default='./build/sfc_proxy.json')
+    # args = parser.parse_args()
 
-    if not os.path.exists(args.p4info):
-        parser.print_help()
-        print("\np4info file not found: %s\nHave you run 'make'?" % args.p4info)
-        parser.exit(1)
-    if not os.path.exists(args.bmv2_json):
-        parser.print_help()
-        print("\nBMv2 JSON file not found: %s\nHave you run 'make'?" % args.bmv2_json)
-        parser.exit(1)
+    # if not os.path.exists(args.p4info):
+    #     parser.print_help()
+    #     print("\np4info file not found: %s\nHave you run 'make'?" % args.p4info)
+    #     parser.exit(1)
+    # if not os.path.exists(args.bmv2_json):
+    #     parser.print_help()
+    #     print("\nBMv2 JSON file not found: %s\nHave you run 'make'?" % args.bmv2_json)
+    #     parser.exit(1)
         
-    install_proxy(args.p4info, args.bmv2_json)
+    install_proxy('./build/sfc_proxy.p4.p4info.txt', './build/sfc_proxy.json')
+    install_firewall('./build/sfc_firewall.p4.p4info.txt', './build/sfc_firewall.json')
+    install_qos('./build/sfc_qos.p4.p4info.txt', './build/sfc_qos.json')
     
     

@@ -1,6 +1,6 @@
 BMV2_SWITCH_EXE = simple_switch_grpc
 
-# DEFAULT_PROG = basic.p4
+DEFAULT_PROG = basic.p4
 
 BUILD_DIR = build
 PCAP_DIR = pcaps

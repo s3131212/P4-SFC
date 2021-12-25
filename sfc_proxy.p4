@@ -18,10 +18,17 @@ const bit<2> QOS_HIGH = 1;
 const bit<2> QOS_MEDIUM = 2;
 const bit<2> QOS_LOW = 3;
 
-const bit<4> TYPE_GENERAL = 0;
-const bit<4> TYPE_WEB = 1;
-const bit<4> TYPE_APP = 2;
-const bit<4> TYPE_MISC = 3;
+const bit<4> APP_TYPE_GENERAL = 0;
+const bit<4> APP_TYPE_WEB = 1;
+
+const bit<6> SVC_TYPE_PROXY = 0;
+const bit<6> SVC_TYPE_FIRWALL = 1;
+const bit<6> SVC_TYPE_QOS = 2;
+const bit<6> SVC_TYPE_LOAD_BALANCE = 3;
+
+const bit<15> CONTEXT_PROXY= 1000;
+const bit<15> CONTEXT_FIREWALL = 1024;
+const bit<15> CONTEXT_QOS = 1336;
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
@@ -30,6 +37,7 @@ const bit<4> TYPE_MISC = 3;
 typedef bit<9>  egressSpec_t;
 typedef bit<48> macAddr_t;
 typedef bit<32> ip4Addr_t;
+
 
 header ethernet_t {
     macAddr_t dstAddr;
@@ -40,13 +48,13 @@ header ethernet_t {
 header sfc_header_t {
     bit<2> version; 
     bit<4> max_size;
-    bit<4> type;
+    bit<4> app_type;
     bit<2> qos;
     bit<4> dst_id;
 }
 
 header sfc_service_t {
-    bit<6> type;
+    bit<6> svc_type;
     bit<2> status;
     bit<4> act;
     bit<4> params;
@@ -189,30 +197,25 @@ control MyIngress(inout headers hdr,
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
 
-    action enable_sfc(bit<4> max_size, bit<2> qos, bit<4> dst_id) {
+    action enable_sfc(bit<4> max_size, bit<2> qos, bit<4> dst_id, bit<4> app_type) {
         hdr.sfc_header.setValid();
         hdr.sfc_header.version = (bit<2>) 1;
         hdr.sfc_header.max_size = max_size;
-        hdr.sfc_header.type = TYPE_GENERAL;
+        hdr.sfc_header.app_type = app_type;
         hdr.sfc_header.qos = qos;
         hdr.sfc_header.dst_id = dst_id;
 
         hdr.sfc_service.setValid();
         hdr.sfc_service.status = STATUS_INIT;
-
-        hdr.sfc_context.push_front(1);
-        hdr.sfc_context[0].setValid();
-        hdr.sfc_context[0].bos = 1;
-        hdr.sfc_context[0].content = 1000;
         
         hdr.ethernet.etherType = TYPE_SFC;
     }
 
-    action update_sfc_service(bit<6> type, 
+    action update_sfc_service(bit<6> svc_type, 
                               bit<2> status,
                               bit<4> act,
                               bit<4> params) {
-        hdr.sfc_service.type = type;
+        hdr.sfc_service.svc_type = svc_type;
         hdr.sfc_service.status = status;
         hdr.sfc_service.act = act;
         hdr.sfc_service.params = params;
@@ -224,15 +227,12 @@ control MyIngress(inout headers hdr,
         hdr.sfc_context[0].content = content;
 
         // Set the last context to be 1
-        // In case of we have more than 4 contexts
-        // And the initial one is popped
-        if (hdr.sfc_context.size == 4) {
-            hdr.sfc_context[3].bos = 1;
-        }
+        hdr.sfc_context[hdr.sfc_context.size - 1].bos = 1;
     }
 
-    action forward_sfc(egressSpec_t port) {
+    action forward_sfc(egressSpec_t port, bit<6> svc_type) {
         standard_metadata.egress_spec = port;
+        update_sfc_service(svc_type, STATUS_RUNNING, 0, 0);
     }
 
     action disable_sfc(macAddr_t dstAddr, egressSpec_t port) {
@@ -257,7 +257,9 @@ control MyIngress(inout headers hdr,
 
     table sfc_forward_exact {
         key = {
+            hdr.sfc_header.app_type: exact;
             hdr.sfc_header.dst_id: exact;
+            hdr.sfc_service.act: exact;
         }
         actions = {
             forward_sfc;
@@ -286,11 +288,13 @@ control MyIngress(inout headers hdr,
         }
 
         if (hdr.sfc_header.isValid()) {
-            add_sfc_context(1024);
-            add_sfc_context(1025);
-            add_sfc_context(1026);
-            add_sfc_context(1027);
-            
+            add_sfc_context(CONTEXT_PROXY);
+            hdr.sfc_context[0].bos = 1;
+
+            // For testing
+            // to firewall
+            hdr.sfc_service.act = 1;
+
             if (sfc_forward_exact.apply().miss) {
                 if (sfc_disable_exact.apply().hit) {
                     // Disable header and service

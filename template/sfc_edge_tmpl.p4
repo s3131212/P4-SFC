@@ -18,10 +18,17 @@ const bit<2> QOS_HIGH = 1;
 const bit<2> QOS_MEDIUM = 2;
 const bit<2> QOS_LOW = 3;
 
-const bit<4> TYPE_GENERAL = 0;
-const bit<4> TYPE_WEB = 1;
-const bit<4> TYPE_APP = 2;
-const bit<4> TYPE_MISC = 3;
+const bit<4> APP_TYPE_GENERAL = 0;
+const bit<4> APP_TYPE_WEB = 1;
+
+const bit<6> SVC_TYPE_PROXY = 0;
+const bit<6> SVC_TYPE_FIRWALL = 1;
+const bit<6> SVC_TYPE_QOS = 2;
+const bit<6> SVC_TYPE_LOAD_BALANCE = 3;
+
+const bit<15> CONTEXT_FIREWALL = 1024;
+const bit<15> CONTEXT_PROXY= 1000;
+const bit<15> CONTEXT_QOS = 1336;
 
 /*************************************************************************
 *********************** H E A D E R S  ***********************************
