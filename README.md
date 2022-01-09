@@ -19,12 +19,12 @@ make sfc
 ./controller/install.py
 ```
 3. Check connection
-  - Method 1: using ping (ICMP) (Only for no firewall)
+  - Method 1: using ping (ICMP)
 ```bash
 mininet> h1 ping h2
 mininet> h2 ping h1
 ```
-  - Method 2: using TCP (for both)
+  - Method 2: using TCP
 ```bash
 # It will open terminal for host 1 and host 2
 mininet> xterm h1 h2

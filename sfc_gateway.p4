@@ -311,7 +311,7 @@ control MyIngress(inout headers hdr,
 
             // For testing
             // to firewall
-            // hdr.sfc_service.act = 1;
+            hdr.sfc_service.act = 1;
 
             if (sfc_forward_exact.apply().miss) {
                 if (sfc_disable_exact.apply().hit) {
