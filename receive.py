@@ -70,18 +70,8 @@ bind_layers(SFC_Header, SFC_Service)
 bind_layers(SFC_Service, SFC_Context)
 bind_layers(SFC_Context, SFC_Context, bos=0)
 bind_layers(SFC_Context, IP, bos=1)
-# bind_layers(SFC_Service, IP)
-
-# bind_layers(Ether, SourceRoute, type=0x1234)
-# bind_layers(SourceRoute, SourceRoute, bos=0)
-# bind_layers(SourceRoute, SourceRoutingTail, bos=1)
 
 def main():
-    # iface = 'eth0'
-    iface = 's4-eth1'
-    # iface = 's4-eth2'
-    # iface = 's2-eth1'
-    # iface = 's2-eth2'
     iface = sys.argv[1]
     print("sniffing on %s" % iface)
     sys.stdout.flush()

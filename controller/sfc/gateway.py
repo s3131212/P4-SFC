@@ -20,7 +20,7 @@ from common.const import *
 from common.general import *
 from common.rules import *
 
-def install_proxy(p4info_file_path, bmv2_file_path):
+def install_gateway(p4info_file_path, bmv2_file_path):
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
 
     try:

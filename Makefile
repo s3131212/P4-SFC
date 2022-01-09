@@ -41,9 +41,6 @@ run: build
 sfc: build
 	sudo python3 $(RUN_SCRIPT) -t $(TOPO_DIR)/sfc-topology.json $(run_args)
 
-firewall: build
-	sudo python3 $(RUN_SCRIPT) -t $(TOPO_DIR)/firewall-topology.json $(run_args)
-
 stop:
 	sudo mn -c
 

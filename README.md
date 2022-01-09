@@ -3,15 +3,10 @@
 This is a simple SFC implemented on P4.
 
 ## Project Structure
-- `reference`: The reference p4 programs and controllers.
-  - `p4`: We reference several programs from [p4tutorial](https://github.com/p4lang/tutorials). 
-  - `controllers`: This folder contains several experiemental controllers implemented before. They are not runnable, just for reference.
-- `runtime`: It documents the setting of each switch. You can install it manually using the CLI provided. However, formally we use our controller to insert p4info and set rules.
-- `sfc`: This folder contains our p4 application in hierarchy.
 - `template`: They are templates for both internal switch and edge switches.
 - `utils`: This also comes from [p4tutorial](https://github.com/p4lang/tutorials). It provides many useful library and scripts to manipulate p4runtime.
 - `vm-ubuntu-20.04`: This is our experiment environment. Use `vagrant up` to setup the virtual machine, still comes from [p4tutorial](https://github.com/p4lang/tutorials).
-- `controlles`: This is where we put our controllers in.
+- `controllers`: This is where we put our controllers in.
 
 ## Usage
 
@@ -21,22 +16,24 @@ make sfc
 ```
 2. Install rules on p4 switches
 ```bash
-./sfc_controller.py
+./controller/install.py
 ```
 3. Check connection
-  - Method 1: using ping (ICMP)
+  - Method 1: using ping (ICMP) (Only for no firewall)
 ```bash
 mininet> h1 ping h2
+mininet> h2 ping h1
 ```
-  - Method 2: using TCP
+  - Method 2: using TCP (for both)
 ```bash
 # It will open terminal for host 1 and host 2
 mininet> xterm h1 h2
 
 # You can modify the iface to listen on different NIC
-h2> ./tools/receive.py
+h2> ./receive.py eth0
 
-h1> ./tools/send.py 10.0.2.2
+# 10.0.2.2 is the destination ip address (see topo/topology.json)
+h1> ./send.py 10.0.2.2
 ```
 4. Cleanup
 ```bash
@@ -44,5 +41,26 @@ h1> ./tools/send.py 10.0.2.2
 
 # 2. Clean up the resources
 make clean
+```
+
+## Testing Connection
+The simplest way to test connection between switches and hosts is to user our `send.py` and `receive.py`. 
+1. First, you have to send up where to listen the packet. The benefits of listening on ports of switches are to see if a packet did be send to some port.
+```bash
+# 1. Testing connection between host
+mininet> xterm h1 h2
+
+# The only interface on host is eth0
+h2> ./receive.py eth0
+
+# 2. Test connection between host and switch
+mininet> xterm h1 s4
+
+# The interface of switch is [switch name]-[port number]
+s4> ./receive.py s4-eth3
+```
+2. Second, just use `send.py` to send packet.
+```
+h1> ./send.py 10.0.2.2
 ```
 

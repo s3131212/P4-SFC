@@ -308,14 +308,10 @@ control MyIngress(inout headers hdr,
         if (hdr.sfc_header.isValid() && sfc_service_exact.apply().hit) {
             add_sfc_context(CONTEXT_PROXY);
             hdr.sfc_context[0].bos = 1;
-            // add_sfc_context(1001);
-            // add_sfc_context(1002);
-            // add_sfc_context(1003);
-            // add_sfc_context(1004);
 
             // For testing
             // to firewall
-            hdr.sfc_service.act = 1;
+            // hdr.sfc_service.act = 1;
 
             if (sfc_forward_exact.apply().miss) {
                 if (sfc_disable_exact.apply().hit) {
